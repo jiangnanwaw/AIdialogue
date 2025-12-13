@@ -1,0 +1,19 @@
+{
+  "name": "deepseek-ai-chat",
+  "version": "1.0.0",
+  "description": "AI智能助手，集成DeepSeek API和SQL Server数据库查询",
+  "main": "cloud.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "leanengine": "^3.3.2",
+    "leancloud-storage": "^4.15.0",
+    "axios": "^1.6.0",
+    "mssql": "^10.0.1"
+  }
+}

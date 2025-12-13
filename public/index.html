@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI智能助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            height: 100vh;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.assistant {
+            justify-content: flex-start;
+            position: relative;
+        }
+
+        .message.assistant::before {
+            content: '🤖';
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 20px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f0;
+            border-radius: 8px;
+            margin-right: 8px;
+        }
+
+        .message.assistant .message-content {
+            margin-left: 40px;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message.user .message-content {
+            background: #007AFF;
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 20px 40px;
+        }
+
+        .input-label {
+            color: #333333;
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 20px 60px 20px 20px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .input-box:focus {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-box::placeholder {
+            color: #999;
+        }
+
+        .send-button {
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: #007AFF;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .send-button:hover {
+            background: #0051D5;
+            transform: scale(1.05);
+        }
+
+        .send-button:active {
+            transform: scale(0.95);
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .send-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #007AFF;
+            animation: loading 1.4s infinite ease-in-out both;
+        }
+
+        .loading:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .loading:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes loading {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .loading-container {
+            display: flex;
+            gap: 6px;
+            padding: 12px 18px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="messages-container" id="messagesContainer"></div>
+
+        <div class="input-section">
+            <div class="input-label">有什么可以帮到你？</div>
+            <div class="input-wrapper">
+                <input
+                    type="text"
+                    class="input-box"
+                    id="messageInput"
+                    placeholder="给我发送消息"
+                    autocomplete="off"
+                >
+                <button class="send-button" id="sendButton">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="19" x2="12" y2="5"></line>
+                        <polyline points="5 12 12 5 19 12"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
+    <script>
+        // 初始化 LeanCloud
+        AV.init({
+            appId: '8luz5IULzHMzsGz2hG2a4scI-gzGzoHsz',
+            appKey: 'CMGwM4hzM3C2TXTfIYQVS6TM',
+            serverURL: 'https://8luz5iul.lc-cn-n1-shared.com'
+        });
+
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+
+        // 添加消息到界面
+        function addMessage(content, isUser = false, metadata = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+
+            messageDiv.appendChild(contentDiv);
+
+            // 如果有元数据，显示额外信息
+            if (metadata && metadata.processingTime) {
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'message-metadata';
+                metaDiv.style.fontSize = '11px';
+                metaDiv.style.color = '#999';
+                metaDiv.style.marginTop = '5px';
+                metaDiv.textContent = `处理时间: ${metadata.processingTime}ms`;
+
+                if (metadata.sqlQuery) {
+                    metaDiv.textContent += ` | SQL已生成`;
+                    metaDiv.title = metadata.sqlQuery;
+                }
+
+                contentDiv.appendChild(metaDiv);
+            }
+
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // 显示加载动画
+        function showLoading() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+            messageDiv.id = 'loading-message';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content loading-container';
+            contentDiv.innerHTML = '<span class="loading"></span><span class="loading"></span><span class="loading"></span>';
+
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // 移除加载动画
+        function removeLoading() {
+            const loadingMessage = document.getElementById('loading-message');
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // 禁用输入和按钮
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+
+            // 显示用户消息
+            addMessage(message, true);
+            messageInput.value = '';
+
+            // 显示加载动画
+            showLoading();
+
+            try {
+                console.log('发送消息:', message);
+
+                // 调用云函数
+                const result = await AV.Cloud.run('chatWithAI', { message: message });
+
+                console.log('收到响应:', result);
+
+                // 移除加载动画
+                removeLoading();
+
+                // 显示AI回复
+                const metadata = {
+                    processingTime: result.processingTime,
+                    sqlQuery: result.sqlQuery
+                };
+
+                addMessage(result.reply, false, metadata);
+
+            } catch (error) {
+                console.error('发送消息时出错:', error);
+                console.error('错误详情:', {
+                    name: error.name,
+                    message: error.message,
+                    code: error.code,
+                    rawMessage: error.rawMessage
+                });
+
+                removeLoading();
+
+                let errorMsg = '抱歉，处理您的请求时出现错误。\n';
+
+                if (error.code === 141) {
+                    errorMsg += '云函数执行错误，请查看服务器日志。';
+                } else if (error.code === 1) {
+                    errorMsg += '网络连接失败，请检查网络。';
+                } else {
+                    errorMsg += `错误信息: ${error.message || '未知错误'}`;
+                }
+
+                addMessage(errorMsg);
+            } finally {
+                // 恢复输入和按钮
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // 测试DeepSeek API连接
+        async function testDeepSeekAPI() {
+            console.log('测试DeepSeek API连接...');
+            try {
+                const result = await AV.Cloud.run('testDeepSeekAPI', {});
+                console.log('DeepSeek API测试结果:', result);
+
+                if (result.success) {
+                    addMessage(`✅ DeepSeek API连接正常\n可用模型: ${result.models.data ? result.models.data.length : 0}个`);
+                } else {
+                    addMessage(`❌ DeepSeek API连接失败\n错误: ${result.error}\n状态码: ${result.status}`);
+                }
+            } catch (error) {
+                console.error('测试DeepSeek API时出错:', error);
+                addMessage(`❌ 测试失败: ${error.message}`);
+            }
+        }
+
+        // 测试数据库连接
+        async function testDatabaseConnection() {
+            console.log('测试数据库连接...');
+            try {
+                const result = await AV.Cloud.run('testDatabaseConnection', {});
+                console.log('数据库测试结果:', result);
+
+                if (result.success) {
+                    addMessage(`✅ 数据库连接正常\n版本: ${result.version.substring(0, 50)}...`);
+                } else {
+                    addMessage(`❌ 数据库连接失败\n错误: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('测试数据库时出错:', error);
+                addMessage(`❌ 测试失败: ${error.message}`);
+            }
+        }
+
+        // 查询数据库中的所有表名
+        async function listDatabaseTables() {
+            console.log('查询数据库表名...');
+            try {
+                const result = await AV.Cloud.run('listDatabaseTables', {});
+                console.log('数据库表名结果:', result);
+
+                if (result.success) {
+                    const tableList = result.tables.join('\n• ');
+                    addMessage(`✅ ${result.message}\n\n表名列表：\n• ${tableList}`);
+                } else {
+                    addMessage(`❌ 查询表名失败\n错误: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('查询表名时出错:', error);
+                addMessage(`❌ 查询失败: ${error.message}`);
+            }
+        }
+
+        // 发送按钮点击事件
+        sendButton.addEventListener('click', sendMessage);
+
+        // 回车发送
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // 监听特殊命令
+        messageInput.addEventListener('input', (e) => {
+            const value = e.target.value.trim();
+
+            // 如果输入 /test-api 则测试DeepSeek API
+            if (value === '/test-api') {
+                e.target.value = '';
+                testDeepSeekAPI();
+            }
+
+            // 如果输入 /test-db 则测试数据库
+            if (value === '/test-db') {
+                e.target.value = '';
+                testDatabaseConnection();
+            }
+
+            // 如果输入 /list-tables 则查询所有表名
+            if (value === '/list-tables') {
+                e.target.value = '';
+                listDatabaseTables();
+            }
+
+            // 如果输入 /help 显示帮助
+            if (value === '/help') {
+                e.target.value = '';
+                addMessage(`可用命令：
+/test-api - 测试DeepSeek API连接
+/test-db - 测试数据库连接
+/list-tables - 查询数据库所有表名
+/help - 显示此帮助信息
+
+数据库查询示例：
+• 今年特来电的平均充电服务费是多少？
+• 2020年8月兴元收入多少？
+• 今天充电的总电量是多少？
+
+通用问答示例：
+• 什么是人工智能？
+• 如何学习编程？`);
+            }
+        });
+
+        // 页面加载完成后的初始化
+        window.addEventListener('load', () => {
+            messageInput.focus();
+        });
+    </script>
+</body>
+</html>
