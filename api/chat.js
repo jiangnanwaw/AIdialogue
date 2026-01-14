@@ -6282,7 +6282,7 @@ export default async function handler(req, res) {
     const MAX_PROCESSING_TIME = 12000; // 最大处理时间12秒，留3秒缓冲给LeanCloud
     const { message, sessionId } = req.body;
     const requestIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
-    const userId = req.headers['user-id'] : 'anonymous';
+    const userId = req.headers['user-id'] || 'anonymous';
 
     debugLog('收到新请求', { message, sessionId, userId, timestamp: new Date().toISOString() });
 
