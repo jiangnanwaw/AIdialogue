@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI智能助手 - Vercel版本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            height: 100vh;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px;
+            margin-bottom: 20px;
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f1f1f1;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.assistant {
+            justify-content: flex-start;
+            position: relative;
+        }
+
+        .message.assistant::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            margin-right: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.assistant::after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 6px;
+            width: 20px;
+            height: 20px;
+            background:
+                radial-gradient(circle at 50% 50%, #ffffff 3px, transparent 3px),
+                radial-gradient(circle at 0% 0%, #ffffff 1.5px, transparent 1.5px),
+                radial-gradient(circle at 100% 0%, #ffffff 1.5px, transparent 1.5px),
+                radial-gradient(circle at 0% 100%, #ffffff 1.5px, transparent 1.5px),
+                radial-gradient(circle at 100% 100%, #ffffff 1.5px, transparent 1.5px);
+            background-size: 20px 20px;
+            background-position: center;
+            opacity: 0.95;
+        }
+
+        .message.assistant .message-content {
+            margin-left: 40px;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message.user .message-content {
+            background: #007AFF;
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 20px 40px;
+        }
+
+        .input-label {
+            color: #333333;
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 20px 60px 20px 20px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: box-shadow 0.3s ease;
+            resize: none;
+            min-height: 50px;
+            max-height: 200px;
+            overflow-y: auto;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+
+        .input-box:focus {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-box::placeholder {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .send-button {
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: #007AFF;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .send-button:hover {
+            background: #0051D5;
+            transform: scale(1.05);
+        }
+
+        .send-button:active {
+            transform: scale(0.95);
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .send-button svg {
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #007AFF;
+            animation: loading 1.4s infinite ease-in-out both;
+        }
+
+        .loading:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .loading:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes loading {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .loading-container {
+            display: flex;
+            gap: 6px;
+            padding: 12px 18px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .thinking-section {
+            color: #666;
+            font-style: italic;
+            margin: 10px 0 5px 0;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-left: 3px solid #6c757d;
+            border-radius: 4px;
+        }
+
+        .answer-section {
+            color: #333;
+            margin: 10px 0 5px 0;
+            padding: 8px 12px;
+            background: #e7f3ff;
+            border-left: 3px solid #007AFF;
+            border-radius: 4px;
+        }
+
+        .message-content strong {
+            color: #007AFF;
+            font-weight: 600;
+        }
+
+        .download-prompt {
+            margin-top: 15px;
+            padding: 12px 16px;
+            background: #f0f7ff;
+            border: 1px solid #007AFF;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .download-prompt-text {
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .download-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .download-button:hover {
+            background: #0051D5;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+
+        .download-button:active {
+            transform: translateY(0);
+        }
+
+        .download-button svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .truncated-content {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="messages-container" id="messagesContainer"></div>
+
+        <div class="input-section">
+            <div class="input-label">有什么可以帮到你？</div>
+            <div class="input-wrapper">
+                <textarea
+                    class="input-box"
+                    id="messageInput"
+                    placeholder="给我发送消息(可查：充电数据、洗车收入、充电桩收入、售货机收入、停车收入、微信收入、充值缴费等)"
+                    autocomplete="off"
+                    rows="1"
+                ></textarea>
+                <button class="send-button" id="sendButton">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="19" x2="12" y2="5"></line>
+                        <polyline points="5 12 12 5 19 12"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- XLSX库用于Excel导出 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <script>
+        // ========== Vercel API 配置 ==========
+        const API_BASE_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000'
+            : ''; // 生产环境使用相对路径
+
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+
+        let isSending = false;
+        let currentAbortController = null;
+
+        // ========== 工具函数 ==========
+
+        function renderMarkdown(text) {
+            if (!text) return '';
+
+            // 处理加粗文本
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+            // 处理【思考】和【回答】标签
+            text = text.replace(/【思考】/g, '<div class="thinking-section"><strong>【思考】</strong></div>');
+            text = text.replace(/【回答】/g, '<div class="answer-section"><strong>【回答】</strong></div>');
+
+            // 保留换行
+            text = text.replace(/\n/g, '<br>');
+
+            return text;
+        }
+
+        function downloadAsExcel(data, filename = '查询结果') {
+            if (typeof XLSX === 'undefined') {
+                alert('Excel导出功能不可用：XLSX库加载失败。\n\n请检查网络连接或刷新页面重试。');
+                return;
+            }
+
+            try {
+                if (!data || data.length === 0) {
+                    alert('没有可下载的数据');
+                    return;
+                }
+
+                const wb = XLSX.utils.book_new();
+                const headers = Object.keys(data[0]);
+                const excelData = [
+                    headers,
+                    ...data.map(row => headers.map(header => {
+                        const value = row[header];
+                        if (value instanceof Date) return value;
+                        if (typeof value === 'number') return value;
+                        if (value === null || value === undefined) return '';
+                        return String(value);
+                    }))
+                ];
+
+                const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+                const colWidths = headers.map(header => {
+                    const maxLength = Math.max(
+                        header.length,
+                        ...data.map(row => {
+                            const val = row[header];
+                            return val ? String(val).length : 0;
+                        })
+                    );
+                    return { wch: Math.min(Math.max(maxLength + 2, 10), 50) };
+                });
+                ws['!cols'] = colWidths;
+
+                XLSX.utils.book_append_sheet(wb, ws, '查询结果');
+
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '_');
+                const finalFilename = `${filename}_${timestamp}.xlsx`;
+
+                XLSX.writeFile(wb, finalFilename);
+            } catch (error) {
+                console.error('生成Excel文件时出错:', error);
+                alert('下载失败，请稍后重试');
+            }
+        }
+
+        function addMessage(content, isUser = false, metadata = null, rawData = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+
+            const shouldShowDownload = !isUser && rawData && rawData.hasData && rawData.rawData && rawData.rawData.length > 10;
+            const MAX_DISPLAY_LINES = 20;
+            let displayContent = content;
+            let isTruncated = false;
+
+            if (shouldShowDownload) {
+                const lines = content.split('\n');
+                if (lines.length > MAX_DISPLAY_LINES) {
+                    const tableStartIndex = lines.findIndex(line => line.includes('|') && !line.includes('---'));
+                    if (tableStartIndex !== -1) {
+                        const truncatedLines = lines.slice(0, tableStartIndex + MAX_DISPLAY_LINES);
+                        displayContent = truncatedLines.join('\n') + '\n\n... 数据较多，建议下载完整数据查看';
+                        isTruncated = true;
+                    }
+                }
+            }
+
+            if (!isUser) {
+                if (isTruncated) {
+                    const truncatedDiv = document.createElement('div');
+                    truncatedDiv.className = 'truncated-content';
+                    truncatedDiv.innerHTML = renderMarkdown(displayContent);
+                    contentDiv.appendChild(truncatedDiv);
+                } else {
+                    contentDiv.innerHTML = renderMarkdown(displayContent);
+                }
+            } else {
+                contentDiv.textContent = displayContent;
+            }
+
+            if (shouldShowDownload) {
+                const downloadPrompt = document.createElement('div');
+                downloadPrompt.className = 'download-prompt';
+
+                const promptText = document.createElement('div');
+                promptText.className = 'download-prompt-text';
+                const recordCount = rawData.rawData.length;
+                if (isTruncated) {
+                    promptText.textContent = `📊 查询结果包含 ${recordCount} 条记录，当前仅显示部分数据。是否需要下载完整的Excel表格？`;
+                } else {
+                    promptText.textContent = `📊 查询结果包含 ${recordCount} 条记录。是否需要下载Excel表格以便更好地查看和分析数据？`;
+                }
+
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'download-button';
+                downloadBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    下载Excel表格
+                `;
+
+                downloadBtn.addEventListener('click', () => {
+                    downloadAsExcel(rawData.rawData, '查询结果');
+                });
+
+                downloadPrompt.appendChild(promptText);
+                downloadPrompt.appendChild(downloadBtn);
+                contentDiv.appendChild(downloadPrompt);
+            }
+
+            messageDiv.appendChild(contentDiv);
+
+            if (metadata && metadata.processingTime) {
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'message-metadata';
+                metaDiv.style.fontSize = '11px';
+                metaDiv.style.color = '#999';
+                metaDiv.style.marginTop = '5px';
+                metaDiv.textContent = `处理时间: ${metadata.processingTime}ms`;
+                contentDiv.appendChild(metaDiv);
+            }
+
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showLoading() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+            messageDiv.id = 'loading-message';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content loading-container';
+            contentDiv.innerHTML = '<span class="loading"></span><span class="loading"></span><span class="loading"></span>';
+
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeLoading() {
+            const loadingMessage = document.getElementById('loading-message');
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+        }
+
+        function getSessionId() {
+            let sessionId = null;
+            try {
+                sessionId = sessionStorage.getItem('chatSessionId');
+                if (!sessionId) {
+                    sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    sessionStorage.setItem('chatSessionId', sessionId);
+                }
+            } catch (e) {
+                console.warn('sessionStorage访问被阻止，使用内存存储:', e);
+                if (!window._tempSessionId) {
+                    window._tempSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                }
+                sessionId = window._tempSessionId;
+            }
+            return sessionId;
+        }
+
+        function updateSendButtonIcon(isPause = false) {
+            const svg = sendButton.querySelector('svg');
+            if (isPause) {
+                svg.innerHTML = `
+                    <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                    <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+                `;
+            } else {
+                svg.innerHTML = `
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                `;
+            }
+        }
+
+        function cancelConversation() {
+            if (isSending && currentAbortController) {
+                console.log('取消对话请求');
+                currentAbortController.abort();
+                currentAbortController = null;
+            }
+
+            isSending = false;
+            currentAbortController = null;
+            removeLoading();
+            updateSendButtonIcon(false);
+            sendButton.disabled = false;
+            messageInput.disabled = false;
+            messageInput.focus();
+            addMessage('对话已取消', false);
+        }
+
+        // ========== Vercel API 调用函数 ==========
+
+        async function callVercelAPI(message, sessionId) {
+            const response = await fetch(`${API_BASE_URL}/api/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message, sessionId })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        }
+
+        // ========== 发送消息 ==========
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            if (isSending) {
+                return;
+            }
+
+            isSending = true;
+            currentAbortController = new AbortController();
+
+            messageInput.disabled = true;
+            sendButton.disabled = false;
+            updateSendButtonIcon(true);
+
+            addMessage(message, true);
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+
+            showLoading();
+
+            const MAX_RETRIES = 2;
+            let retryCount = 0;
+
+            try {
+                while (retryCount <= MAX_RETRIES) {
+                    try {
+                        console.log('发送消息:', message, retryCount > 0 ? `(重试 ${retryCount}/${MAX_RETRIES})` : '');
+
+                        const sessionId = getSessionId();
+
+                        // 调用 Vercel API
+                        const result = await callVercelAPI(message, sessionId);
+
+                        if (!isSending) {
+                            console.log('请求已被取消，忽略响应');
+                            return;
+                        }
+
+                        console.log('收到响应:', result);
+                        removeLoading();
+
+                        const metadata = {
+                            processingTime: result.processingTime
+                        };
+
+                        const rawData = {
+                            rawData: result.rawData,
+                            hasData: result.hasData
+                        };
+
+                        addMessage(result.reply, false, metadata, rawData);
+                        break;
+
+                    } catch (error) {
+                        if (!isSending) {
+                            console.log('请求已被取消');
+                            return;
+                        }
+
+                        console.error('发送消息时出错:', error);
+
+                        const shouldRetry = retryCount < MAX_RETRIES &&
+                                           !error.name?.includes('Abort');
+
+                        if (shouldRetry) {
+                            retryCount++;
+                            console.log(`准备重试 (${retryCount}/${MAX_RETRIES})，等待 ${retryCount * 1000}ms...`);
+                            await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
+                            continue;
+                        }
+
+                        removeLoading();
+
+                        let errorMsg = '抱歉，处理您的请求时出现错误。\n';
+
+                        if (error.name?.includes('Abort')) {
+                            errorMsg = '请求已取消';
+                        } else if (error.message?.includes('fetch')) {
+                            errorMsg += '网络连接失败，请检查网络。';
+                        } else {
+                            errorMsg += `错误信息: ${error.message || '未知错误'}`;
+                        }
+
+                        addMessage(errorMsg);
+                        break;
+                    }
+                }
+            } catch (outerError) {
+                console.error('外层错误:', outerError);
+                removeLoading();
+                addMessage('抱歉，处理您的请求时出现未知错误。');
+            } finally {
+                isSending = false;
+                currentAbortController = null;
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                updateSendButtonIcon(false);
+                messageInput.focus();
+            }
+        }
+
+        // ========== 事件监听 ==========
+
+        sendButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (isSending) {
+                cancelConversation();
+            } else {
+                sendMessage();
+            }
+        });
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        messageInput.addEventListener('input', (e) => {
+            const textarea = e.target;
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+        });
+
+        // ========== 帮助命令 ==========
+
+        messageInput.addEventListener('input', (e) => {
+            const value = e.target.value.trim();
+
+            if (value === '/help') {
+                e.target.value = '';
+                addMessage(`可用命令：
+/help - 显示此帮助信息
+
+💡 系统特性：
+• 智能错误提示：查询为空时自动提示可能原因
+• 数据范围提示：自动显示各表数据时间范围
+• 类型安全校验：自动处理nvarchar字段转换
+• 友好错误反馈：清晰的错误说明和建议
+
+数据库查询示例：
+【充电相关】
+• 今年特来电的平均充电服务费是多少？
+• 今天充电的总电量是多少？
+• 滴滴充电收入统计
+
+【时间查询】
+• 2024年第2季度充电收入（支持季度查询）
+• 本周充电电量统计（支持周查询）
+• 近7天收入汇总（支持相对时间）
+• 2024年同比增长率（支持增长率计算）
+
+【业务分析】
+• 2024年四方坪利润率是多少？（利润率计算）
+• 四方坪充电效率分析（充电效率）
+• 本月充电收入环比增长（环比增长）
+
+【洗车业务】
+• 今年洗车收入是多少？（自动汇总所有洗车表）
+• 四方坪洗车收入统计
+• 快易洁洗车收入
+
+【其他业务】
+• 充电桩收入统计
+• 零售/售货机收入
+• 停车收入查询
+
+⚠️ 查询为空时，系统会自动提示数据范围和可能的原因
+
+通用问答示例：
+• 什么是人工智能？
+• 如何学习编程？`);
+            }
+        });
+
+        // ========== 初始化 ==========
+
+        messageInput.focus();
+        console.log('Vercel版本的AI助手已加载');
+    </script>
+</body>
+</html>
