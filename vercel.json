@@ -1,26 +1,12 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     },
     {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "source": "/(.*)",
+      "destination": "/public/$1"
     }
-  ],
-  "env": {
-    "DEEPSEEK_API_KEY": "@deepseek-api-key",
-    "DB_USER": "@db-user",
-    "DB_PASSWORD": "@db-password",
-    "DB_SERVER": "@db-server",
-    "DB_DATABASE": "@db-database"
-  }
+  ]
 }
