@@ -1,6 +1,6 @@
 // Vercel Serverless Function - 替代 LeanCloud chatWithAI 云函数
-const sql = require('mssql');
-const axios = require('axios');
+import sql from 'mssql';
+import axios from 'axios';
 
 // ========== 配置 ==========
 const DEBUG_MODE = true;

@@ -2,6 +2,7 @@
   "name": "ai-chat-vercel",
   "version": "1.0.0",
   "description": "AI智能助手 - Vercel版本，集成DeepSeek API和SQL Server数据库查询",
+  "type": "module",
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel",

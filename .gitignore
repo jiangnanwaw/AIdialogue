@@ -45,3 +45,6 @@ USER_*.md
 create_indexes.sql
 diagnose_*.sql
 test_*.sql
+
+.vercel
+.env*.local
