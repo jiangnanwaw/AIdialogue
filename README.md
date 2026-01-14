@@ -41,14 +41,12 @@ npm install
 2. 登录LeanCloud CLI：
 ```bash
 lean login
-```
-使用账号：471010996@qq.com
+
 
 3. 关联应用：
 ```bash
 lean switch
-```
-选择应用：deepseek（AppID: 8luz5IULzHMzsGz2hG2a4scI-gzGzoHsz）
+
 
 4. 部署到LeanCloud：
 ```bash
@@ -68,15 +66,15 @@ lean up
 
 ## 数据库配置
 
-- 服务器：csfhcdz.f3322.net:1433
-- 数据库：chargingdata
-- 用户名：csfh
-- 密码：fh123456
+- 服务器：
+- 数据库：
+- 用户名：
+- 密码：
 
 ## API配置
 
-- DeepSeek API Key: sk-9a6e2beae112468dba3d212df48354f0
-- LeanCloud REST API: https://8luz5iul.lc-cn-n1-shared.com
+- DeepSeek API Key: 
+- LeanCloud REST API: 
 
 ## 使用说明
 
