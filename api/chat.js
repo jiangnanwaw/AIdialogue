@@ -6213,54 +6213,54 @@ async function askDeepSeek(message) {
 }
 
 // 保存对话记录到LeanCloud
-async function saveConversationLog(logData) {
-    try {
-        const ConversationLog = AV.Object.extend('ConversationLog');
-        const log = new ConversationLog();
-        
-        // 设置所有字段
-        log.set('userMessage', logData.userMessage || '');
-        log.set('aiReply', logData.aiReply || '');
-        log.set('queryType', logData.queryType || 'unknown'); // 'database' 或 'general'
-        log.set('sessionId', logData.sessionId || 'default');
-        log.set('timestamp', new Date(logData.timestamp || Date.now()));
-        log.set('processingTime', logData.processingTime || 0);
-        log.set('isSuccess', logData.isSuccess !== false);
-        
-        // 数据库查询相关字段
-        if (logData.queryType === 'database') {
-            log.set('tables', logData.tables || []);
-            log.set('sqlQuery', logData.sqlQuery || '');
-            log.set('queryResult', logData.queryResult || '');
-            log.set('method', logData.method || 'unknown');
-        }
-        
-        // 错误信息
-        if (logData.error) {
-            log.set('error', logData.error);
-            log.set('errorMessage', logData.errorMessage || '');
-        }
-        
-        // 用户信息（如果有）
-        if (logData.userId) {
-            log.set('userId', logData.userId);
-        }
-        if (logData.userIp) {
-            log.set('userIp', logData.userIp);
-        }
-        
-        // 保存到LeanCloud
-        await log.save();
-        debugLog('对话记录已保存', { objectId: log.id });
-        
-        return log.id;
-    } catch (error) {
-        // 记录失败不应该影响主流程，只记录错误
-        console.error('保存对话记录失败:', error);
-        return null;
-    }
-}
-
+// async function saveConversationLog(logData) {
+//     try {
+//         const ConversationLog = AV.Object.extend('ConversationLog');
+//         const log = new ConversationLog();
+//         
+//         // 设置所有字段
+//         log.set('userMessage', logData.userMessage || '');
+//         log.set('aiReply', logData.aiReply || '');
+//         log.set('queryType', logData.queryType || 'unknown'); // 'database' 或 'general'
+//         log.set('sessionId', logData.sessionId || 'default');
+//         log.set('timestamp', new Date(logData.timestamp || Date.now()));
+//         log.set('processingTime', logData.processingTime || 0);
+//         log.set('isSuccess', logData.isSuccess !== false);
+//         
+//         // 数据库查询相关字段
+//         if (logData.queryType === 'database') {
+//             log.set('tables', logData.tables || []);
+//             log.set('sqlQuery', logData.sqlQuery || '');
+//             log.set('queryResult', logData.queryResult || '');
+//             log.set('method', logData.method || 'unknown');
+//         }
+//         
+//         // 错误信息
+//         if (logData.error) {
+//             log.set('error', logData.error);
+//             log.set('errorMessage', logData.errorMessage || '');
+//         }
+//         
+//         // 用户信息（如果有）
+//         if (logData.userId) {
+//             log.set('userId', logData.userId);
+//         }
+//         if (logData.userIp) {
+//             log.set('userIp', logData.userIp);
+//         }
+//         
+//         // 保存到LeanCloud
+//         await log.save();
+//         debugLog('对话记录已保存', { objectId: log.id });
+//         
+//         return log.id;
+//     } catch (error) {
+//         // 记录失败不应该影响主流程，只记录错误
+//         console.error('保存对话记录失败:', error);
+//         return null;
+//     }
+// }
+// 
 // 云函数：处理AI对话
 export default async function handler(req, res) {
     // CORS
