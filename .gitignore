@@ -1,5 +1,47 @@
-node_modules
-.DS_Store
-*.log
+# 依赖
+node_modules/
+package-lock.json
+
+# 环境变量
 .env
-.leancloud/current_app_id
+.env.local
+.env.*.local
+
+# LeanCloud
+.leancloud/
+
+# 日志
+*.log
+logs/
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 临时文件
+*.tmp
+tmp/
+tmpclaude-*/
+
+# 不需要的 LeanCloud 相关文件
+server.js
+cloud.js
+
+# 文档文件（可选）
+DEBUG_GUIDE.md
+DEPLOYMENT.md
+QUICKSTART.md
+ENHANCEMENT_*.md
+AI*.md
+SQL*.md
+USER_*.md
+查找最近季度为空的详细记录.sql
+create_indexes.sql
+diagnose_*.sql
+test_*.sql

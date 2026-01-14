@@ -1,5 +1,5 @@
 {
-  "name": "ai-chat-vercel",
+  "name": "deepseek-ai-chat-vercel",
   "version": "1.0.0",
   "description": "AI智能助手 - Vercel版本，集成DeepSeek API和SQL Server数据库查询",
   "type": "module",
@@ -11,6 +11,9 @@
   "dependencies": {
     "axios": "^1.6.0",
     "mssql": "^10.0.1"
+  },
+  "devDependencies": {
+    "vercel": "^37.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
